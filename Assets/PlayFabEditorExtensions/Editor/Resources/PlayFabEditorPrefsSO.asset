@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d0199c11aa6f514784c5c69cd8378d8, type: 3}
   m_Name: PlayFabEditorPrefsSO
   m_EditorClassIdentifier: 
-  DevAccountEmail: farukhjamal@crosshairtechnology.com
-  DevAccountToken: 8ds7rbmiuwhsjcncxwx36p8ptfic6giwde9i6wrxnhxbh73nj17zt3c5a6qjccit6g61rsni8ewjrywdsdcrd74pydxuc6arz73rcchkcpy8n71bgbg5yu77hqqdsiupou8nu9z8d45xmwqcmkxda9h6s34y4n6iq7todkexyz3gpqeepgajpma1std9cgw6nr5zjoyi
-  AadAuthorization: 
-  SelectedStudio: Crosshair Technology
+  DevAccountEmail: crosshairtechnologies@gmail.com
+  DevAccountToken: ux11jszrm5fhusk5bp7341zh3hxhkr6pb1ymg1fkh3xbe56a8ntxueesm3czn43kyna45jwsj691genby71rq3e1x5ddwqza3woz7kcxjobk8q5mdbzogfie618p97cpak1bo9e1xa54ocjxyb5n9k9a1tnie9p5q7mjp19tajst53dumdwqr1id18gsdsrppsu5gzsu
+  SelectedStudio: My Game Studio
   SdkPath: Assets/PlayFabSDK
   EdExPath: 
   LocalCloudScriptPath: 
   PanelIsShown: 0
-  curMainMenuIdx: 2
-  curSubMenuIdx: 1
+  curMainMenuIdx: 0
+  curSubMenuIdx: 0

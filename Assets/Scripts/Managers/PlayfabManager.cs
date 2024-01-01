@@ -100,10 +100,11 @@ namespace Managers
                 Username = userName,
                 Password = password
             };
-            
-            UpdateDisplayName(userName);
-            if(Validator.ValidateRegisteration(userName,emailId,password,confirmPassword))
-                PlayFabClientAPI.RegisterPlayFabUser(registerRequest,OnRegisterSuccess,OnRegisterError);
+            if (Validator.ValidateRegisteration(userName,emailId,password,confirmPassword))
+            {
+                PlayFabClientAPI.RegisterPlayFabUser(registerRequest, OnRegisterSuccess, OnRegisterError);
+
+            }
             else
                 UIManager.Instance.ShowErrorMessage("Invalid Register!","Error!Kindly check your credentials Again.");
         }
@@ -164,6 +165,8 @@ namespace Managers
             SessionTicket = result.SessionTicket;
             EntityID = result.EntityToken.Entity.Id;
             OnRegisterSuccessful?.Invoke(SessionTicket);
+            UpdateDisplayName(result.Username);
+
         }
         private void EmailLoginErrorResult(PlayFabError error)
         {

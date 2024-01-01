@@ -27,12 +27,6 @@ namespace PlayFab.PfEditor.EditorModels
         public string DeveloperToolProductVersion;
     }
 
-    public class LoginWithAADRequest
-    {
-        public string DeveloperToolProductName;
-        public string DeveloperToolProductVersion;
-    }
-
     public class LoginResult
     {
         public string DeveloperClientToken;
@@ -165,7 +159,6 @@ namespace PlayFab.PfEditor.EditorModels
         public string ErrorMessage;
         public Dictionary<string, List<string>> ErrorDetails;
         public object CustomData;
-        public uint? RetryAfterSeconds = null;
 
         [ThreadStatic]
         private static StringBuilder _tempSb;

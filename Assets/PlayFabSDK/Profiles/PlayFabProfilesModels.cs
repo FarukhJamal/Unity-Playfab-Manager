@@ -142,10 +142,6 @@ namespace PlayFab.ProfilesModels
         /// </summary>
         public string Language;
         /// <summary>
-        /// Leaderboard metadata for the entity.
-        /// </summary>
-        public string LeaderboardMetadata;
-        /// <summary>
         /// The lineage of this profile.
         /// </summary>
         public EntityLineage Lineage;
@@ -194,30 +190,29 @@ namespace PlayFab.ProfilesModels
     }
 
     [Serializable]
-    public class EntityStatisticChildValue : PlayFabBaseModel
+    public class EntityStatisticAttributeValue : PlayFabBaseModel
     {
         /// <summary>
-        /// Child name value, if child statistic
-        /// </summary>
-        public string ChildName;
-        /// <summary>
-        /// Child statistic metadata
+        /// Metadata associated with the Statistic.
         /// </summary>
         public string Metadata;
         /// <summary>
-        /// Child statistic value
+        /// Attribute name.
         /// </summary>
-        public int Value;
+        public string Name;
+        /// <summary>
+        /// Attribute Statistic scores.
+        /// </summary>
+        public List<string> Scores;
     }
 
     [Serializable]
     public class EntityStatisticValue : PlayFabBaseModel
     {
         /// <summary>
-        /// Child statistic values
+        /// Attribute Statistic values.
         /// </summary>
-        [Obsolete("Use 'AttributeStatistics' instead", false)]
-        public Dictionary<string,EntityStatisticChildValue> ChildStatistics;
+        public Dictionary<string,EntityStatisticAttributeValue> AttributeStatistics;
         /// <summary>
         /// Metadata associated with the Statistic.
         /// </summary>
@@ -226,6 +221,10 @@ namespace PlayFab.ProfilesModels
         /// Statistic name
         /// </summary>
         public string Name;
+        /// <summary>
+        /// Statistic scores
+        /// </summary>
+        public List<string> Scores;
         /// <summary>
         /// Statistic value
         /// </summary>
