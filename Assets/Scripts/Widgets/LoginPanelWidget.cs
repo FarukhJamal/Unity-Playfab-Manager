@@ -12,7 +12,7 @@ namespace Widgets
 {
     public class LoginPanelWidget:Widget
     {
-        public Button backBtn,enterBtn,loginBtn,registerBtn;
+        public Button backBtn,enterBtn,loginBtn,registerBtn, guestBtn;
         public TMP_InputField userName, emailID, password,confirmPassword;
         private void Start()
         {
@@ -23,7 +23,8 @@ namespace Widgets
         {
            backBtn.onClick.AddListener(RemoveListerners);
            loginBtn.onClick.AddListener(LoginClicked);
-           registerBtn.onClick.AddListener(SignUpClicked);
+           registerBtn.onClick.AddListener(SignUpwithEmailClicked);
+            guestBtn.onClick.AddListener(SignUpAsGuestClicked);
         }
 
         private void RemoveListerners()
@@ -31,9 +32,14 @@ namespace Widgets
             enterBtn.onClick.RemoveAllListeners();
         }
 
-        void SignUp()
+        void SignUpWithEmail()
         {
             PlayfabManager.Instance.PlayfabSignUpRequest(userName.text, emailID.text, password.text,confirmPassword.text);
+        }
+
+        void SignUpWithGuestID()
+        {
+            PlayfabManager.Instance.LoginWithGuestUser();
         }
 
         void Login()
@@ -48,11 +54,16 @@ namespace Widgets
             userName.gameObject.SetActive(false);
             enterBtn.onClick.AddListener(Login);
         }
-        void SignUpClicked()
+        void SignUpwithEmailClicked()
         {
             confirmPassword.gameObject.SetActive(true);
             userName.gameObject.SetActive(true);
-            enterBtn.onClick.AddListener(SignUp);
+            enterBtn.onClick.AddListener(SignUpWithEmail);
+        }
+
+        void SignUpAsGuestClicked()
+        {
+            SignUpWithGuestID();
         }
  
     }

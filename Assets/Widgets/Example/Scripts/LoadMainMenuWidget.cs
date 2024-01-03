@@ -1,14 +1,27 @@
 ﻿using UnityEngine;
 using System.Collections;
 using eeGames.Widget;
+using TMPro;
+using PlayFab.ClientModels;
+using PlayFab;
+using Managers;
 
-public class LoadMainMenuWidget : MonoBehaviour
+public class LoadMainMenuWidget : Widget
 {
+    public TMP_Text userID, userName;
 
 	// Use this for initialization
 	void Start () 
     {
-        // Show MainMenu Widget
-        WidgetManager.Instance.Push(WidgetName.MainMenu);
+
+        UI_SetUserData();
 	}
+
+    void UI_SetUserData()
+    {
+        PlayfabManager.Instance.GetAccountInfo();
+        userID.text = PlayfabManager.Instance.MyPlayfabID;
+        userName.text = PlayfabManager.Instance.MyUserName;
+    }
+    
 }

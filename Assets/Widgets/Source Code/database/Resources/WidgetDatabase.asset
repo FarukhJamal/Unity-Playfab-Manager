@@ -28,6 +28,9 @@ MonoBehaviour:
   - Id: 6
     perfabPath: Prefabs/Widgets/PlayfabLogin
     PoolOnLoad: 0
+  - Id: 8
+    perfabPath: Prefabs/Widgets/PlayfabMainMenu
+    PoolOnLoad: 0
   - Id: 7
     perfabPath: Prefabs/Widgets/PopUp
     PoolOnLoad: 0

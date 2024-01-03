@@ -13,7 +13,8 @@ namespace eeGames.Widget
         SaveSetting,
         MiniGame,
         PlayfabLogin,
-        PopUp
+        PopUp,
+        PlayfabMainMenu
     }
 
 }

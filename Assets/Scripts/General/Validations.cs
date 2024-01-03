@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnityEditor.PackageManager;
 
 namespace General
 {
@@ -8,10 +10,24 @@ namespace General
     {
         #region Register
 
-        public  bool ValidateRegisteration(string name,string email,string password,string confirmPassword)
+        public  bool ValidateRegisteration(string name,string email,string password,string confirmPassword, out string errorMsg)
         {
-            if (/*!IsValidUsername(name) ||*/ !IsEmailValid(email) || !IsPasswordMatch(password, confirmPassword))
+            if (!IsEmailValid(email))
+            {
+                errorMsg = "Wrong Email format.";
                 return false;
+            }
+            if (!IsPasswordValid(password, out errorMsg))
+            {
+                return false;
+            }
+            if (!IsPasswordMatch(password, confirmPassword))
+            {
+                errorMsg = "Passwords do not match. Retype your password.";
+                return false;
+            }
+
+            errorMsg = String.Empty;
             return true;
         }
         #endregion

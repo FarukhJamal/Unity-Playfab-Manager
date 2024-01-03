@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8600930163598856887}
   - component: {fileID: 7350157624230450817}
+  - component: {fileID: 2934722117040909062}
   m_Layer: 5
   m_Name: PlayfabMainMenu
   m_TagString: Untagged
@@ -50,6 +51,26 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &2934722117040909062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8064927557711150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f3d3202275a28d49b1d9fed0e920629, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OnShow:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHide:
+    m_PersistentCalls:
+      m_Calls: []
+  userID: {fileID: 5954487835879070089}
+  userName: {fileID: 4480625227988367332}
 --- !u!1 &54446079171482199
 GameObject:
   m_ObjectHideFlags: 0
@@ -221,7 +242,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.019000001, y: 0.7832218}
   m_AnchorMax: {x: 0.2532717, y: 0.93700004}
-  m_AnchoredPosition: {x: -2.4578247, y: 3.5924988}
+  m_AnchoredPosition: {x: -2.4578247, y: 3.5925293}
   m_SizeDelta: {x: 2.816, y: -0.95199966}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &582815771502305164
@@ -290,7 +311,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Playfab Login
+  m_text: User Data
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -396,7 +417,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 960.1471, y: -149.76581}
+  m_AnchoredPosition: {x: 540, y: -265.35742}
   m_SizeDelta: {x: 280, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7046593753023600609
@@ -1352,8 +1373,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: 230, y: 0}
-  m_SizeDelta: {x: 228.39, y: 50}
+  m_AnchoredPosition: {x: 567.2719, y: 0}
+  m_SizeDelta: {x: 565.6619, y: 50}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &6522857699628046492
 CanvasRenderer:
@@ -1527,7 +1548,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 750.1471, y: -149.76581}
+  m_AnchoredPosition: {x: 330, y: -265.35742}
   m_SizeDelta: {x: 280, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &743872919265533804

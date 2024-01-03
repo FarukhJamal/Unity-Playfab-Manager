@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
+using System.Text;
 using eeGames.Widget;
 using General;
 using Models;
@@ -9,6 +11,7 @@ using Newtonsoft.Json;
 using PlayFab;
 using PlayFab.ClientModels;
 using PlayFab.MultiplayerModels;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using Currency = General.Currency;
 using EntityKey = PlayFab.MultiplayerModels.EntityKey;
@@ -56,21 +59,26 @@ namespace Managers
         public static PlayerDataError OnDataFetchingError;
         #endregion
         #endregion
-        
+
         #region Variables
         #region Public-Variables
-        
+        public string MyPlayfabID;
+        public string MyUserName;
+
         public static PlayfabManager Instance;
         public UIManager UI_Manager;
         public static string SessionTicket;
         public static string EntityID;
         public Currency GameCurrency;          // Virtual Currency if any
         #endregion
-        
+
         #region Private-Variables
-        
+        private const string encryptionKey = "SecretKey";
         private string TicketID;
         private Coroutine pollTicketRoutine;
+        private bool IsGuestLogin = false;
+        private bool IsEmailLogin = false;
+        //private bool ISGoogleLogin = false;
         #endregion
         #endregion
         
@@ -85,7 +93,12 @@ namespace Managers
         {
             Validator = new Validations();
             UI_Manager = new UIManager();
-            UIManager.Instance.SpawnUI(WidgetName.PlayfabLogin);
+
+            //AutoLogin
+            GetBoolDataFromPlayerPrefs();
+
+            if(!IsEmailLogin && !IsGuestLogin)
+                UIManager.Instance.SpawnUI(WidgetName.PlayfabLogin);
         }
         #endregion
         
@@ -100,13 +113,15 @@ namespace Managers
                 Username = userName,
                 Password = password
             };
-            if (Validator.ValidateRegisteration(userName,emailId,password,confirmPassword))
+
+            if (Validator.ValidateRegisteration(userName,emailId,password,confirmPassword, out string errorMsg))
             {
                 PlayFabClientAPI.RegisterPlayFabUser(registerRequest, OnRegisterSuccess, OnRegisterError);
-
+                IsEmailLogin = true;
+                UserDataStoringInPlayerPrefs(emailId, password);
             }
             else
-                UIManager.Instance.ShowErrorMessage("Invalid Register!","Error!Kindly check your credentials Again.");
+                UIManager.Instance.ShowErrorMessage("Invalid Register! \n Error!Kindly check your credentials Again. \n", errorMsg);
         }
         #endregion
         
@@ -118,12 +133,24 @@ namespace Managers
                 Email = emailId,
                 Password = password
             };
-            
             if(Validator.ValidateLogin(emailId,password,out string errorMsg))
-                PlayFabClientAPI.LoginWithEmailAddress(loginRequest,EmailLoginSuccessResult,EmailLoginErrorResult);
+            {
+                PlayFabClientAPI.LoginWithEmailAddress(loginRequest, EmailLoginSuccessResult, EmailLoginErrorResult);
+                UserDataStoringInPlayerPrefs(emailId, password);
+                Debug.Log("Logged In");
+            }
             else
                 UIManager.Instance.ShowErrorMessage("Invalid Username!",errorMsg);
 
+        }
+        public void LoginWithGuestUser()
+        {
+            var request = new LoginWithCustomIDRequest
+            {
+                CustomId = SystemInfo.deviceUniqueIdentifier,
+                CreateAccount = true,
+            };
+            PlayFabClientAPI.LoginWithCustomID(request, GuestLoginSuccessResult, GuestLoginErrorResult);
         }
         void UpdateDisplayName(string name)
         {
@@ -133,10 +160,15 @@ namespace Managers
             };
             PlayFabClientAPI.UpdateUserTitleDisplayName(request,OnDisplayNameUpdateSuccess,OnDiplayNameUpdateFail);
         }
-        
+
         #endregion
-        
+
         #region Player-Data
+        public void GetAccountInfo()
+        {
+            GetAccountInfoRequest request = new GetAccountInfoRequest();
+            PlayFabClientAPI.GetAccountInfo(request, AccountInfoSuccess, AcountInfoFail);
+        }
 
         public void GetPlayerData()
         {
@@ -158,6 +190,7 @@ namespace Managers
         private void OnRegisterError(PlayFabError error)
         {
             OnRegisterUnSuccessful?.Invoke();
+            UIManager.Instance.ShowErrorMessage("Invalid Register! \n Error!Kindly check your credentials Again. \n", error.ToString());
             Debug.Log(error.GenerateErrorReport());
         }
         private void OnRegisterSuccess(RegisterPlayFabUserResult result)
@@ -171,12 +204,35 @@ namespace Managers
         private void EmailLoginErrorResult(PlayFabError error)
         {
             OnEmailLoginUnSuccessful?.Invoke();
+            UIManager.Instance.ShowErrorMessage("No such account found\n", error.ToString());
         }
         private void EmailLoginSuccessResult(LoginResult result)
         {
             SessionTicket = result.SessionTicket;
             EntityID = result.EntityToken.Entity.Id;
             OnEmailLoginSuccessful?.Invoke(SessionTicket);
+            IsEmailLogin = true;
+            UIManager.Instance.SpawnUI(WidgetName.PlayfabMainMenu);
+        }
+        private void GuestLoginErrorResult(PlayFabError error)
+        {
+            OnEmailLoginUnSuccessful?.Invoke();
+            UIManager.Instance.ShowErrorMessage("Failed To Create Guest Account\n", error.ToString());
+        }
+        private void GuestLoginSuccessResult(LoginResult result)
+        {
+            SessionTicket = result.SessionTicket;
+            EntityID= result.EntityToken.Entity.Id;
+            OnEmailLoginSuccessful?.Invoke(SessionTicket);
+
+            GuestName();
+
+            IsGuestLogin = true;
+
+            UserDataStoringInPlayerPrefs();
+
+            UIManager.Instance.SpawnUI(WidgetName.PlayfabMainMenu);
+
         }
         private void UserDataErrorCallback(PlayFabError error)
         {
@@ -198,11 +254,25 @@ namespace Managers
         private void OnDisplayNameUpdateSuccess(UpdateUserTitleDisplayNameResult result)
         {
             Debug.Log(result.DisplayName);
+            UIManager.Instance.SpawnUI(WidgetName.PlayfabMainMenu);
+        }
+        void AccountInfoSuccess(GetAccountInfoResult result)
+        {
+            MyPlayfabID = result.AccountInfo.PlayFabId;
+            if(IsGuestLogin)
+                MyUserName = "Guest";
+            else
+                MyUserName = result.AccountInfo.Username;
+            Debug.Log("PlayFab ID: " + MyPlayfabID + "\nUser Name: " + MyUserName);
+        }
+        void AcountInfoFail(PlayFabError error)
+        {
+            Debug.LogError(error.GenerateErrorReport());
         }
         #endregion
 
         #region Matchmaking
-        
+
         public void StartMatchmaking()
         {
             // Do anything related UI and then call playfab matchmaking
@@ -330,6 +400,114 @@ namespace Managers
             Debug.Log(error.GenerateErrorReport());
         }
         #endregion
+        #endregion
+
+        #region Player Data For AutoLogin
+        void UserDataStoringInPlayerPrefs(string email = null, string password = null)
+        {
+            PlayerPrefs.SetInt("IsGuestLogin", IsGuestLogin ? 1 : 0);
+            PlayerPrefs.SetInt("IsEmailLogin", IsEmailLogin ? 1 : 0);
+            
+            if(IsEmailLogin)
+            {
+                PlayerPrefs.SetString("Email", Encrypt(email));
+                PlayerPrefs.SetString("Password", Encrypt(password));
+            }
+            else if(IsGuestLogin)
+            {
+                PlayerPrefs.SetString("CustomID", Encrypt(SystemInfo.deviceUniqueIdentifier));
+            }
+            PlayerPrefs.SetString("SessionTicket", SessionTicket);
+        }
+
+        void GetBoolDataFromPlayerPrefs()
+        {
+            int GuestLogin = PlayerPrefs.GetInt("IsGuestLogin");
+            int EmailLogin = PlayerPrefs.GetInt("IsEmailLogin");
+
+            if (GuestLogin == 1)
+            {
+                IsGuestLogin = true;
+            }
+            else
+            {
+                IsGuestLogin = false;
+            }
+            
+            if (EmailLogin == 1)
+            {
+                IsEmailLogin = true;
+            }
+            else
+            {
+                IsEmailLogin = false;
+            }
+
+            AutoLogin(IsGuestLogin, IsEmailLogin);
+
+        }
+
+        void AutoLogin(bool IsGuestLogin, bool IsEmailLogin)
+        {
+            if(IsEmailLogin)
+            {
+                string encryptedemail = PlayerPrefs.GetString("Email");
+                string encryptedpassword = PlayerPrefs.GetString("Password");
+
+                string email = Decrypt(encryptedemail);
+                string password = Decrypt(encryptedpassword);
+                
+                LoginWithEmail(email, password);
+                Debug.Log("Auto Loggedin with Email" + email);
+            }
+            else if(IsGuestLogin)
+            {
+                string encryptedCustomID = PlayerPrefs.GetString("CustomID");
+                string CustomID = Decrypt(encryptedCustomID);
+                
+                if (SystemInfo.deviceUniqueIdentifier == CustomID)
+                {
+                    LoginWithGuestUser();
+                    Debug.Log("Auto Loggedin with customID" +  CustomID);
+                }
+            }
+        }
+
+        private string Encrypt(string plainText)
+        {
+            char[] keyChars = encryptionKey.ToCharArray();
+            char[] plainTextChars = plainText.ToCharArray();
+            for (int i = 0; i < plainTextChars.Length; i++)
+            {
+                plainTextChars[i] = (char)(plainTextChars[i] ^ keyChars[i % keyChars.Length]);
+            }
+            return BitConverter.ToString(System.Text.Encoding.UTF8.GetBytes(new string(plainTextChars))).Replace("-", "");
+        }
+
+        private string Decrypt(string hexText)
+        {
+            char[] keyChars = encryptionKey.ToCharArray();
+            byte[] hexBytes = new byte[hexText.Length / 2];
+            for (int i = 0; i < hexBytes.Length; i++)
+            {
+                hexBytes[i] = Convert.ToByte(hexText.Substring(i * 2, 2), 16);
+            }
+            char[] decryptedChars = System.Text.Encoding.UTF8.GetChars(hexBytes);
+            for (int i = 0; i < decryptedChars.Length; i++)
+            {
+                decryptedChars[i] = (char)(decryptedChars[i] ^ keyChars[i % keyChars.Length]);
+            }
+            return new string(decryptedChars);
+        }
+        #endregion
+
+        #region Assign Name to Guest
+        void GuestName()
+        {
+            int randValues = UnityEngine.Random.Range(100000, 900000);
+            string GuestName = "User" + randValues.ToString();
+            UpdateDisplayName(GuestName);
+        }
         #endregion
         #endregion
 
