@@ -19,6 +19,11 @@ namespace Managers
             _widgetManager.Push(widgetName);
         }
 
+        public Widget GetUI(WidgetName widgetName)
+        {
+            return _widgetManager.GetWidget(widgetName);
+        }
+
         public void SpawnUI(WidgetName widgetName, bool playHideTween = false, bool lastActive = false,
             bool lastInteractive = false, bool firstChild = false)
         {

@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using eeGames.Widget;
 using General;
+using GooglePlayGames;
 using Models;
 using Newtonsoft.Json;
 using PlayFab;
@@ -13,6 +14,7 @@ using PlayFab.ClientModels;
 using PlayFab.MultiplayerModels;
 using UnityEditor.PackageManager;
 using UnityEngine;
+using Widgets;
 using Currency = General.Currency;
 using EntityKey = PlayFab.MultiplayerModels.EntityKey;
 
@@ -33,9 +35,13 @@ namespace Managers
     
         protected Validations Validator;
         #endregion
-        
+
+        #region Google Sign In 
+        PFGoogleSignInUnity GoogleSignIn;
+        #endregion
+
         #region Delegate-Events
-        
+
         #region Register Events
         public delegate void RegisterSuccess(string ticket);
         public static RegisterSuccess OnRegisterSuccessful;
@@ -64,7 +70,7 @@ namespace Managers
         #region Public-Variables
         public string MyPlayfabID;
         public string MyUserName;
-
+        public bool IsAccountData = false;
         public static PlayfabManager Instance;
         public UIManager UI_Manager;
         public static string SessionTicket;
@@ -78,6 +84,8 @@ namespace Managers
         private Coroutine pollTicketRoutine;
         private bool IsGuestLogin = false;
         private bool IsEmailLogin = false;
+        private string Email = null, Password = null, GuestID = null, Guest = null;
+        private LoadMainMenuWidget menuWidget;
         //private bool ISGoogleLogin = false;
         #endregion
         #endregion
@@ -93,7 +101,8 @@ namespace Managers
         {
             Validator = new Validations();
             UI_Manager = new UIManager();
-
+            GoogleSignIn = new PFGoogleSignInUnity();
+            
             //AutoLogin
             GetBoolDataFromPlayerPrefs();
 
@@ -116,9 +125,9 @@ namespace Managers
 
             if (Validator.ValidateRegisteration(userName,emailId,password,confirmPassword, out string errorMsg))
             {
+                Email = emailId;
+                Password = password;
                 PlayFabClientAPI.RegisterPlayFabUser(registerRequest, OnRegisterSuccess, OnRegisterError);
-                IsEmailLogin = true;
-                UserDataStoringInPlayerPrefs(emailId, password);
             }
             else
                 UIManager.Instance.ShowErrorMessage("Invalid Register! \n Error!Kindly check your credentials Again. \n", errorMsg);
@@ -135,8 +144,9 @@ namespace Managers
             };
             if(Validator.ValidateLogin(emailId,password,out string errorMsg))
             {
+                Email = emailId;
+                Password = password;
                 PlayFabClientAPI.LoginWithEmailAddress(loginRequest, EmailLoginSuccessResult, EmailLoginErrorResult);
-                UserDataStoringInPlayerPrefs(emailId, password);
                 Debug.Log("Logged In");
             }
             else
@@ -151,6 +161,10 @@ namespace Managers
                 CreateAccount = true,
             };
             PlayFabClientAPI.LoginWithCustomID(request, GuestLoginSuccessResult, GuestLoginErrorResult);
+        }
+        public void LoginWithGoogle()
+        {
+            PlayGamesPlatform.Instance.Authenticate(GoogleSignIn.ProcessAuthentication);
         }
         void UpdateDisplayName(string name)
         {
@@ -168,6 +182,7 @@ namespace Managers
         {
             GetAccountInfoRequest request = new GetAccountInfoRequest();
             PlayFabClientAPI.GetAccountInfo(request, AccountInfoSuccess, AcountInfoFail);
+            Debug.Log("Account Info Call Sent");
         }
 
         public void GetPlayerData()
@@ -191,6 +206,8 @@ namespace Managers
         {
             OnRegisterUnSuccessful?.Invoke();
             UIManager.Instance.ShowErrorMessage("Invalid Register! \n Error!Kindly check your credentials Again. \n", error.ToString());
+            Email = null;
+            Password = null;
             Debug.Log(error.GenerateErrorReport());
         }
         private void OnRegisterSuccess(RegisterPlayFabUserResult result)
@@ -198,13 +215,25 @@ namespace Managers
             SessionTicket = result.SessionTicket;
             EntityID = result.EntityToken.Entity.Id;
             OnRegisterSuccessful?.Invoke(SessionTicket);
+            
+            IsEmailLogin = true;
+            UserDataStoringInPlayerPrefs();
             UpdateDisplayName(result.Username);
-
+            Widget widget = UIManager.Instance.GetUI(WidgetName.PlayfabLogin);
+            LoginPanelWidget loginPanel = widget.GetComponent<LoginPanelWidget>();
+            loginPanel.Signup.gameObject.SetActive(true);
+            loginPanel.InputPanel.gameObject.SetActive(false);
+            loginPanel.userName.text = null;
+            loginPanel.emailID.text = null;
+            loginPanel.password.text = null;
+            loginPanel.confirmPassword.text = null;
         }
         private void EmailLoginErrorResult(PlayFabError error)
         {
             OnEmailLoginUnSuccessful?.Invoke();
             UIManager.Instance.ShowErrorMessage("No such account found\n", error.ToString());
+            Email = null;
+            Password = null;
         }
         private void EmailLoginSuccessResult(LoginResult result)
         {
@@ -212,7 +241,10 @@ namespace Managers
             EntityID = result.EntityToken.Entity.Id;
             OnEmailLoginSuccessful?.Invoke(SessionTicket);
             IsEmailLogin = true;
+            UserDataStoringInPlayerPrefs();
             UIManager.Instance.SpawnUI(WidgetName.PlayfabMainMenu);
+            Widget widget = UIManager.Instance.GetUI(WidgetName.PlayfabMainMenu);
+            menuWidget = widget.gameObject.GetComponent<LoadMainMenuWidget>();
         }
         private void GuestLoginErrorResult(PlayFabError error)
         {
@@ -224,12 +256,20 @@ namespace Managers
             SessionTicket = result.SessionTicket;
             EntityID= result.EntityToken.Entity.Id;
             OnEmailLoginSuccessful?.Invoke(SessionTicket);
+            if(!IsGuestLogin)
+            {
+                Guest = GuestName();
 
-            GuestName();
+                IsGuestLogin = true;
 
-            IsGuestLogin = true;
-
-            UserDataStoringInPlayerPrefs();
+                UserDataStoringInPlayerPrefs(Guest);
+            }
+            else
+            {
+                Guest = GuestName();
+                MyUserName = Guest;
+                MyPlayfabID = GuestID;
+            }
 
             UIManager.Instance.SpawnUI(WidgetName.PlayfabMainMenu);
 
@@ -254,20 +294,45 @@ namespace Managers
         private void OnDisplayNameUpdateSuccess(UpdateUserTitleDisplayNameResult result)
         {
             Debug.Log(result.DisplayName);
-            UIManager.Instance.SpawnUI(WidgetName.PlayfabMainMenu);
         }
         void AccountInfoSuccess(GetAccountInfoResult result)
         {
+            Debug.Log("Account Info Success");
             MyPlayfabID = result.AccountInfo.PlayFabId;
             if(IsGuestLogin)
-                MyUserName = "Guest";
+            {
+                MyUserName = Guest;
+            }
             else
+            {
                 MyUserName = result.AccountInfo.Username;
+            }
             Debug.Log("PlayFab ID: " + MyPlayfabID + "\nUser Name: " + MyUserName);
+
+            IsAccountData = true;
         }
         void AcountInfoFail(PlayFabError error)
         {
             Debug.LogError(error.GenerateErrorReport());
+        }
+        void OnLeaderBoardUpdate(UpdatePlayerStatisticsResult result)
+        {
+            Debug.Log("Successful Leaderboard Sent " + result.ToJson());
+        }
+        void OnLeaderboardError(PlayFabError error)
+        {
+            Debug.LogError(error.GenerateErrorReport());
+        }
+        void OnGetLeaderbaordSuccess(GetLeaderboardResult result)
+        {
+            foreach(var item in result.Leaderboard)
+            {
+                menuWidget.LeaderBoardDataPlacment(item.Position, item.DisplayName, item.StatValue);
+            }
+        }
+        void OnGetLeaderboardFail(PlayFabError error)
+        {
+            Debug.Log(error.GenerateErrorReport());
         }
         #endregion
 
@@ -402,7 +467,7 @@ namespace Managers
         #endregion
         #endregion
 
-        #region Player Data For AutoLogin
+        #region AutoLogin System
         void UserDataStoringInPlayerPrefs(string email = null, string password = null)
         {
             PlayerPrefs.SetInt("IsGuestLogin", IsGuestLogin ? 1 : 0);
@@ -410,8 +475,8 @@ namespace Managers
             
             if(IsEmailLogin)
             {
-                PlayerPrefs.SetString("Email", Encrypt(email));
-                PlayerPrefs.SetString("Password", Encrypt(password));
+                PlayerPrefs.SetString("Email", Encrypt(Email));
+                PlayerPrefs.SetString("Password", Encrypt(Password));
             }
             else if(IsGuestLogin)
             {
@@ -454,21 +519,23 @@ namespace Managers
                 string encryptedemail = PlayerPrefs.GetString("Email");
                 string encryptedpassword = PlayerPrefs.GetString("Password");
 
-                string email = Decrypt(encryptedemail);
-                string password = Decrypt(encryptedpassword);
+                Email = Decrypt(encryptedemail);
+                Password = Decrypt(encryptedpassword);
                 
-                LoginWithEmail(email, password);
-                Debug.Log("Auto Loggedin with Email" + email);
+                LoginWithEmail(Email, Password);
+                Debug.Log("Auto Loggedin with Email" + Email);
             }
             else if(IsGuestLogin)
             {
                 string encryptedCustomID = PlayerPrefs.GetString("CustomID");
-                string CustomID = Decrypt(encryptedCustomID);
+                GuestID = Decrypt(encryptedCustomID);
+                string encryptedGuestName = PlayerPrefs.GetString("GuestName");
+                Guest = Decrypt(encryptedGuestName);
                 
-                if (SystemInfo.deviceUniqueIdentifier == CustomID)
+                if (SystemInfo.deviceUniqueIdentifier == GuestID)
                 {
                     LoginWithGuestUser();
-                    Debug.Log("Auto Loggedin with customID" +  CustomID);
+                    Debug.Log("Auto Loggedin with customID" + GuestID);
                 }
             }
         }
@@ -502,11 +569,40 @@ namespace Managers
         #endregion
 
         #region Assign Name to Guest
-        void GuestName()
+        string GuestName()
         {
             int randValues = UnityEngine.Random.Range(100000, 900000);
             string GuestName = "User" + randValues.ToString();
             UpdateDisplayName(GuestName);
+            return GuestName;
+        }
+        #endregion
+
+        #region Leaderboard
+        public void SendLeaderboard(int score)
+        {
+            var request = new UpdatePlayerStatisticsRequest
+            {
+                Statistics = new List<StatisticUpdate> {
+                    new StatisticUpdate {
+                        StatisticName = "Match-3 Game",
+                        Value = score
+                    }
+                }
+            };
+            PlayFabClientAPI.UpdatePlayerStatistics(request, OnLeaderBoardUpdate, OnLeaderboardError);
+        }
+
+        public void GetLeaderboard()
+        {
+            var request = new GetLeaderboardRequest
+            {
+                StatisticName = "Match-3 Game",
+                StartPosition = 0,
+                MaxResultsCount = 10
+            };
+            Debug.Log("Sending Leaderboard Get Data Request");
+            PlayFabClientAPI.GetLeaderboard(request, OnGetLeaderbaordSuccess, OnGetLeaderboardFail);
         }
         #endregion
         #endregion

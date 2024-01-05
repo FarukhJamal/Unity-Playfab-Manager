@@ -12,8 +12,9 @@ namespace Widgets
 {
     public class LoginPanelWidget:Widget
     {
-        public Button backBtn,enterBtn,loginBtn,registerBtn, guestBtn;
+        public Button backBtn,enterBtn,loginBtn,registerBtn, guestBtn, googleSignIn;
         public TMP_InputField userName, emailID, password,confirmPassword;
+        public RectTransform Signup, InputPanel;
         private void Start()
         {
             AddListerners();
@@ -25,7 +26,8 @@ namespace Widgets
            loginBtn.onClick.AddListener(LoginClicked);
            registerBtn.onClick.AddListener(SignUpwithEmailClicked);
             guestBtn.onClick.AddListener(SignUpAsGuestClicked);
-        }
+            googleSignIn.onClick.AddListener(GoogleSignIn);
+        } 
 
         private void RemoveListerners()
         {
@@ -42,11 +44,17 @@ namespace Widgets
             PlayfabManager.Instance.LoginWithGuestUser();
         }
 
+
+        void GoogleSignIn()
+        {
+            PlayfabManager.Instance.LoginWithGoogle();
+        }
         void Login()
         {
             
             PlayfabManager.Instance.LoginWithEmail(emailID.text,password.text);
         }
+
 
         void LoginClicked()
         {
@@ -54,6 +62,7 @@ namespace Widgets
             userName.gameObject.SetActive(false);
             enterBtn.onClick.AddListener(Login);
         }
+
         void SignUpwithEmailClicked()
         {
             confirmPassword.gameObject.SetActive(true);
