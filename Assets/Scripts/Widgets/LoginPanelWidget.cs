@@ -60,6 +60,7 @@ namespace Widgets
         {
             confirmPassword.gameObject.SetActive(false);
             userName.gameObject.SetActive(false);
+            enterBtn.onClick.RemoveAllListeners();
             enterBtn.onClick.AddListener(Login);
         }
 
@@ -67,6 +68,7 @@ namespace Widgets
         {
             confirmPassword.gameObject.SetActive(true);
             userName.gameObject.SetActive(true);
+            enterBtn.onClick.RemoveAllListeners();
             enterBtn.onClick.AddListener(SignUpWithEmail);
         }
 

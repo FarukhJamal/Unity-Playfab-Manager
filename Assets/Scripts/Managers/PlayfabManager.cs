@@ -12,7 +12,6 @@ using Newtonsoft.Json;
 using PlayFab;
 using PlayFab.ClientModels;
 using PlayFab.MultiplayerModels;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using Widgets;
 using Currency = General.Currency;
@@ -122,9 +121,10 @@ namespace Managers
                 Username = userName,
                 Password = password
             };
-
+            Debug.Log("Player Registeration request created");
             if (Validator.ValidateRegisteration(userName,emailId,password,confirmPassword, out string errorMsg))
             {
+                Debug.Log("Player info validated before registeration");
                 Email = emailId;
                 Password = password;
                 PlayFabClientAPI.RegisterPlayFabUser(registerRequest, OnRegisterSuccess, OnRegisterError);
@@ -142,6 +142,7 @@ namespace Managers
                 Email = emailId,
                 Password = password
             };
+            Debug.Log("Log in request created");
             if(Validator.ValidateLogin(emailId,password,out string errorMsg))
             {
                 Email = emailId;
@@ -182,7 +183,6 @@ namespace Managers
         {
             GetAccountInfoRequest request = new GetAccountInfoRequest();
             PlayFabClientAPI.GetAccountInfo(request, AccountInfoSuccess, AcountInfoFail);
-            Debug.Log("Account Info Call Sent");
         }
 
         public void GetPlayerData()
@@ -212,6 +212,8 @@ namespace Managers
         }
         private void OnRegisterSuccess(RegisterPlayFabUserResult result)
         {
+            Debug.Log("Player successfully registered");
+
             SessionTicket = result.SessionTicket;
             EntityID = result.EntityToken.Entity.Id;
             OnRegisterSuccessful?.Invoke(SessionTicket);
@@ -480,6 +482,8 @@ namespace Managers
             }
             else if(IsGuestLogin)
             {
+                PlayerPrefs.SetString("GuestName", Encrypt(email));
+
                 PlayerPrefs.SetString("CustomID", Encrypt(SystemInfo.deviceUniqueIdentifier));
             }
             PlayerPrefs.SetString("SessionTicket", SessionTicket);
